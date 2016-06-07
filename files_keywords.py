@@ -9,11 +9,18 @@ import sys
 import re
 
 def isIgnored(name):
-    global ignore
+    ignore = 'pdf,jpg,tgz,doc,pptx,odt'.split(',')
     for x in ignore:
-        if '.'+ignore in name:
+        if '.'+x in name:
             return True
     return False
+
+def escape(filename):
+    lst = [' ', '[', ']']
+    ret = filename
+    for x in lst:
+        ret = ret.replace(x, '\\'+x)
+    return ret
 
 
 if __name__== '__main__':
@@ -24,7 +31,6 @@ if __name__== '__main__':
     keywords = []
 
     args = sys.argv
-    
     
     allargs = ' '.join(args)
 
@@ -39,34 +45,46 @@ if __name__== '__main__':
     if data['path'][-1]== '/': data['path'] = data['path'][:-1]
 
     # populate list of ignore extensions
-    data['ignore'] = data['ignore'].strip().split()
+    if 'ignore' in data.keys():
+        data['ignore'] = data['ignore'].strip().split()
     
     # populate list of keywords
     data['keywords'] = data.get('keywords', '').strip().split()
     if len(data['keywords'])==0:
-        print('ERROR IN FORMAT')
-        assert False
+        print('Usage: <command> -k <KEYWORDS> [-p <PATH> [-i <IGNORED EXTENSIONS>]]')
+        exit(0)
 
-    print(data)
     # final result is dict
     resultset = {}
-    for keyword in data['keywords']: resultset[keyword]=[]
-    
-    print(resultset)
+    for keyword in data['keywords']:
+        resultset[keyword]=[] 
     
     # now iterate over the files and find if any exist
     
-    files = [data['path']+'/'+x for x in os.popen('ls '+data['path']+' -p | grep -v /').read().strip().split()]
+    files = [data['path']+'/'+x for x in os.popen('ls '+data['path']+' -p | grep -v /').read().strip().split('\n')]
     
     for x in files:
-        if isIgnored(x):continue
+        if isIgnored(x):
+            print('Ignoring file:', x)
+            continue
         try:
-            print(os.popen('cat '+x).read().strip().split('\n'))
-        except:
-            pass
-        assert False
-    
-    
-    
-    
-    
+            lines = os.popen('cat \''+escape(x)+'\'').read().strip().split('\n')
+            for keyword in data['keywords']:
+                l = [i+1 for i,y in enumerate(lines) if keyword in y]     
+                if len(l)>0:
+                    resultset[keyword].append((x,l))
+        except Exception as e:
+            print(e)
+
+    # now output
+    for keyword in data['keywords']:
+        print('Keyword \''+ keyword+ '\' found: ',end='')
+        if len(resultset[keyword])==0:
+            print('Nowhere')
+        else:
+            print()
+            for filepath in resultset[keyword]:
+                print('  in file \''+ filepath[0]+ '\'')
+                for l in filepath[1]:
+                    print('    at line ', l)
+        print()
