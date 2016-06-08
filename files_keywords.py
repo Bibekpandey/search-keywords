@@ -8,9 +8,11 @@ import os
 import sys
 import re
 
+ignore = 'pdf,jpg,tgz,doc,pptx,odt'.split(',')
+
 def isIgnored(name):
-    ignore = 'pdf,jpg,tgz,doc,pptx,odt'.split(',')
-    for x in ignore:
+    global data 
+    for x in data['ignore']:
         if '.'+x in name:
             return True
     return False
@@ -24,10 +26,8 @@ def escape(filename):
 
 
 if __name__== '__main__':
-    # global data
     keys = {'-k':'keywords', '-i':'ignore', '-p':'path' }
     data = {'path':os.popen("pwd").read().strip()} # default first element
-    ignore = []
     keywords = []
 
     args = sys.argv
@@ -47,11 +47,18 @@ if __name__== '__main__':
     # populate list of ignore extensions
     if 'ignore' in data.keys():
         data['ignore'] = data['ignore'].strip().split()
+    else:
+        data['ignore'] = []
+
+    tmp = set(data['ignore'])
+    tmp1 = set(ignore)
+    data['ignore'] = list(tmp.union(tmp1))
     
     # populate list of keywords
     data['keywords'] = data.get('keywords', '').strip().split()
     if len(data['keywords'])==0:
         print('Usage: <command> -k <KEYWORDS> [-p <PATH> [-i <IGNORED EXTENSIONS>]]')
+        print('Example: ./search-keywords.py -k include SomeVariableName SomeFunctionName AnyName -p /Some/Path/ -i jpg png etc')
         exit(0)
 
     # final result is dict
@@ -77,8 +84,9 @@ if __name__== '__main__':
             print(e)
 
     # now output
+    print()
     for keyword in data['keywords']:
-        print('Keyword \''+ keyword+ '\' found: ',end='')
+        print('KEYWORD \''+ keyword+ '\' FOUND: ',end='')
         if len(resultset[keyword])==0:
             print('Nowhere')
         else:
