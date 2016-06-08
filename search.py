@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 '''
-    python3 files_keywords.py -p <path> -k <keywords separated by space> -i <ignore extensions>
+    python3 search.py -p <path> -k <keywords separated by space> -i <ignore extensions>
 '''
 
 import subprocess
