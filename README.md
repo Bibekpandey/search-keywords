@@ -1,6 +1,6 @@
 # search-keywords
 
-This is a very simple program that finds out the keywords we want to search in files inside a folder.
+This is a very simple program that finds out the keywords we want to search in files inside a directory.
 
 ## Requirements
 * python3
