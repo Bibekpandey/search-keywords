@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
 '''
-    python3 files_keywords.py -p <path> -k <keywords separated by space>
+    python3 files_keywords.py -p <path> -k <keywords separated by space> -i <ignore extensions>
 '''
 
-import os
+import subprocess
 import sys
 import re
 
@@ -24,10 +24,15 @@ def escape(filename):
         ret = ret.replace(x, '\\'+x)
     return ret
 
+def printmsg():
+    print('Usage: <command> -k <KEYWORDS> [-p <PATH> [-i <IGNORED EXTENSIONS>]]')
+    print('Example: ./search-keywords.py -k include SomeVariableName SomeFunctionName AnyName -p /Some/Path/ -i jpg png etc')
+   
+
 
 if __name__== '__main__':
     keys = {'-k':'keywords', '-i':'ignore', '-p':'path' }
-    data = {'path':os.popen("pwd").read().strip()} # default first element
+    data = {'path':subprocess.getoutput("pwd").strip()} # default first element
     keywords = []
 
     args = sys.argv
@@ -57,8 +62,7 @@ if __name__== '__main__':
     # populate list of keywords
     data['keywords'] = data.get('keywords', '').strip().split()
     if len(data['keywords'])==0:
-        print('Usage: <command> -k <KEYWORDS> [-p <PATH> [-i <IGNORED EXTENSIONS>]]')
-        print('Example: ./search-keywords.py -k include SomeVariableName SomeFunctionName AnyName -p /Some/Path/ -i jpg png etc')
+        printmsg()
         exit(0)
 
     # final result is dict
@@ -67,15 +71,21 @@ if __name__== '__main__':
         resultset[keyword]=[] 
     
     # now iterate over the files and find if any exist
+    files = []
+    op = subprocess.getstatusoutput('ls '+data['path']+' -p | grep -v /')
+    if op[0]==1:
+        print("Please Enter a valid directory path")
+        printmsg()
+        exit(1)
     
-    files = [data['path']+'/'+x for x in os.popen('ls '+data['path']+' -p | grep -v /').read().strip().split('\n')]
+    files = [data['path']+'/'+x for x in op[1].strip().split('\n')]
     
     for x in files:
         if isIgnored(x):
             print('Ignoring file:', x)
             continue
         try:
-            lines = os.popen('cat \''+escape(x)+'\'').read().strip().split('\n')
+            lines = subprocess.getoutput('cat \''+escape(x)+'\'').strip().split('\n')
             for keyword in data['keywords']:
                 l = [i+1 for i,y in enumerate(lines) if keyword in y]     
                 if len(l)>0:
